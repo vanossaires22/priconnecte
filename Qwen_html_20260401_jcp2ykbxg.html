@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlassMessenger</title>
+    <!-- Шрифт Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Иконки RemixIcon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Боковая панель (Контакты) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="ri-message-3-line"></i>
+                    <span>GlassMessenger</span>
+                </div>
+                <button class="mobile-toggle" id="closeSidebar">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            
+            <div class="search-box">
+                <i class="ri-search-line"></i>
+                <input type="text" placeholder="Поиск контактов...">
+            </div>
+
+            <div class="contacts-list" id="contactsList">
+                <!-- Контакты будут добавлены через JS -->
+            </div>
+        </aside>
+
+        <!-- Основное окно чата -->
+        <main class="chat-area">
+            <header class="chat-header">
+                <button class="mobile-toggle" id="openSidebar">
+                    <i class="ri-menu-line"></i>
+                </button>
+                <div class="current-chat-info">
+                    <img src="https://i.pravatar.cc/150?img=32" alt="Avatar" class="avatar" id="currentAvatar">
+                    <div class="chat-details">
+                        <h3 id="currentChatName">Выберите чат</h3>
+                        <span class="status" id="currentStatus">Онлайн</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn"><i class="ri-phone-line"></i></button>
+                    <button class="icon-btn"><i class="ri-vidicon-line"></i></button>
+                    <button class="icon-btn"><i class="ri-more-2-fill"></i></button>
+                </div>
+            </header>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <i class="ri-chat-smile-2-line"></i>
+                    <p>Выберите контакт, чтобы начать общение</p>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <button class="icon-btn attachment-btn"><i class="ri-add-circle-line"></i></button>
+                <input type="text" id="messageInput" placeholder="Напишите сообщение..." autocomplete="off">
+                <button class="icon-btn send-btn" id="sendBtn"><i class="ri-send-plane-fill"></i></button>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
