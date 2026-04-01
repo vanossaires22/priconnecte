@@ -1,5 +1,5 @@
 // ============================================
-// GlassMessenger PRO - Полный функционал
+// priconnecte - Полный функционал
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
