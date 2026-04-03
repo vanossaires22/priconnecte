@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Priconnecte Messenger</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Supabase Client (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- App Config (Supabase credentials) -->
+    <script src="config.js"></script>
+    
+    <!-- Security: CSP Header (опционально, лучше на сервере) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://supabase.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net;">
+</head>
+<body>
+    <!-- Уведомления -->
+    <div class="notifications-container" id="notificationsContainer"></div>
+
+    <!-- Авторизация -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-box">
+            <div class="auth-logo">
+                <i class="ri-global-line"></i>
+                <h1>priconnecte</h1>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Вход</button>
+                <button class="auth-tab" data-tab="register">Регистрация</button>
+            </div>
+
+            <form class="auth-form" id="loginForm" data-supabase-auth="signin">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary" id="loginSubmit">Войти</button>
+                <p class="auth-hint">Нет аккаунта? <a href="#" id="switchToRegister">Зарегистрироваться</a></p>
+            </form>
+
+            <form class="auth-form hidden" id="registerForm" data-supabase-auth="signup">
+                <div class="form-group">
+                    <label for="regName">Имя</label>
+                    <input type="text" id="regName" placeholder="Ваше имя" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" placeholder="your@email.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Пароль</label>
+                    <input type="password" id="regPassword" placeholder="Минимум 6 символов" required minlength="6" autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn-primary" id="registerSubmit">Зарегистрироваться</button>
+                <p class="auth-hint">Уже есть аккаунт? <a href="#" id="switchToLogin">Войти</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Видео сообщение -->
+    <div class="video-recording" id="videoRecording">
+        <video id="videoPreview" autoplay muted playsinline></video>
+        <div class="video-info">
+            <span id="videoTime">00:00</span>
+            <button id="cancelVideo"><i class="ri-close-line"></i></button>
+        </div>
+    </div>
+
+    <!-- Модальное окно профиля -->
+    <div class="modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="profileTitle">Профиль</h2>
+                <button class="modal-close" id="closeProfile" aria-label="Закрыть"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-avatar-section">
+                    <img src="" alt="Аватар" id="profileAvatarPreview" class="avatar-large">
+                    <label for="avatarUpload" class="avatar-upload-btn" title="Загрузить аватар">
+                        <i class="ri-camera-line"></i>
+                    </label>
+                    <input type="file" id="avatarUpload" accept="image/*" hidden>
+                </div>
+                <div class="form-group">
+                    <label for="profileName">Имя</label>
+                    <input type="text" id="profileName" data-supabase-field="display_name">
+                </div>
+                <div class="form-group">
+                    <label for="profileStatus">Статус</label>
+                    <input type="text" id="profileStatus" placeholder="Онлайн" data-supabase-field="status">
+                </div>
+                <button class="btn-primary" id="saveProfile">Сохранить</button>
+                <button class="btn-secondary" id="logoutBtn">Выйти</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Новый чат -->
+    <div class="modal" id="newChatModal" role="dialog" aria-modal="true" aria-labelledby="newChatTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="newChatTitle">Новый чат</h2>
+                <button class="modal-close" id="closeNewChat" aria-label="Закрыть"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="chatType">Тип</label>
+                    <select id="chatType" data-supabase-field="type">
+                        <option value="private">Личный</option>
+                        <option value="group">Группа</option>
+                        <option value="channel">Канал</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="newChatName">Название</label>
+                    <input type="text" id="newChatName" data-supabase-field="name">
+                </div>
+                <div class="form-group">
+                    <label>Участники</label>
+                    <div class="contacts-select" id="contactsSelect"></div>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="confidentialChat" data-supabase-field="is_encrypted">
+                        <span class="checkbox-custom"></span>
+                        Конфиденциальный чат (E2EE)
+                    </label>
+                </div>
+                <button class="btn-primary" id="createChat">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Добавить контакт -->
+    <div class="modal" id="addContactModal" role="dialog" aria-modal="true" aria-labelledby="addContactTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="addContactTitle">Добавить контакт</h2>
+                <button class="modal-close" id="closeAddContact" aria-label="Закрыть"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box">
+                    <i class="ri-search-line"></i>
+                    <input type="text" id="contactSearch" placeholder="Поиск по имени" aria-label="Поиск контакта">
+                </div>
+                <div class="search-results" id="contactSearchResults" role="listbox"></div>
+                <div class="form-group" style="margin-top:20px">
+                    <label for="contactUsername">Username</label>
+                    <input type="text" id="contactUsername" placeholder="@username">
+                </div>
+                <button class="btn-primary" id="addContact">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Звонок -->
+    <div class="modal call-modal" id="callModal" role="dialog" aria-modal="true" aria-labelledby="callTitle">
+        <div class="call-content">
+            <img src="" alt="" id="callAvatar" class="call-avatar">
+            <h2 id="callTitle">Звонок</h2>
+            <p class="call-status" id="callStatus">Звонок...</p>
+            <div class="call-controls">
+                <button class="call-btn" id="muteCall" aria-label="Выключить микрофон"><i class="ri-mic-line"></i></button>
+                <button class="call-btn" id="toggleVideo" aria-label="Включить/выключить видео"><i class="ri-video-line"></i></button>
+                <button class="call-btn end-call" id="endCall" aria-label="Завершить звонок"><i class="ri-phone-off-line"></i></button>
+            </div>
+            <video id="localVideo" autoplay muted playsinline></video>
+            <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+    </div>
+
+    <!-- Настройки -->
+    <div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="settingsTitle">Настройки</h2>
+                <button class="modal-close" id="closeSettings" aria-label="Закрыть"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-body settings-body">
+                <div class="setting-item">
+                    <span>Тема</span>
+                    <select id="themeSelect" data-supabase-field="theme">
+                        <option value="dark">Тёмная</option>
+                        <option value="light">Светлая</option>
+                        <option value="purple">Фиолетовая</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <span>Уведомления</span>
+                    <label class="toggle">
+                        <input type="checkbox" id="notificationsToggle" checked data-supabase-field="notifications_enabled">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контекстное меню -->
+    <div class="context-menu" id="messageContextMenu" role="menu" aria-hidden="true">
+        <button class="context-item" data-action="reply" role="menuitem"><i class="ri-reply-line"></i> Ответить</button>
+        <button class="context-item" data-action="edit" role="menuitem"><i class="ri-edit-line"></i> Редактировать</button>
+        <button class="context-item" data-action="forward" role="menuitem"><i class="ri-forward-line"></i> Переслать</button>
+        <button class="context-item" data-action="delete" role="menuitem"><i class="ri-delete-bin-line"></i> Удалить</button>
+    </div>
+
+    <!-- Приложение -->
+    <div class="app-container hidden" id="appContainer">
+        <aside class="sidebar" id="sidebar" aria-label="Боковая панель">
+            <div class="sidebar-header">
+                <div class="user-profile" id="userProfileBtn" role="button" tabindex="0">
+                    <img src="" alt="Аватар" class="user-avatar" id="userAvatar">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">Пользователь</span>
+                        <span class="user-status" id="userStatusText">Онлайн</span>
+                    </div>
+                </div>
+                <div class="header-actions-small">
+                    <button class="icon-btn" id="settingsBtn" aria-label="Настройки"><i class="ri-settings-4-line"></i></button>
+                    <button class="icon-btn" id="newChatBtn" aria-label="Новый чат"><i class="ri-add-line"></i></button>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <i class="ri-search-line"></i>
+                <input type="text" id="searchInput" placeholder="Поиск..." aria-label="Поиск чатов">
+            </div>
+
+            <div class="tabs" role="tablist">
+                <button class="tab active" data-tab="all" role="tab" aria-selected="true">Все</button>
+                <button class="tab" data-tab="channels" role="tab" aria-selected="false">Каналы</button>
+                <button class="tab" data-tab="archived" role="tab" aria-selected="false">Архив</button>
+            </div>
+
+            <div class="contacts-list" id="contactsList" role="list" aria-label="Список чатов"></div>
+
+            <div class="sidebar-footer">
+                <button class="footer-btn" id="addContactBtn">
+                    <i class="ri-user-add-line"></i> <span class="hide-mobile">Контакт</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="chat-area" aria-label="Область чата">
+            <header class="chat-header">
+                <button class="mobile-toggle" id="openSidebar" aria-label="Меню"><i class="ri-menu-line"></i></button>
+                <div class="current-chat-info">
+                    <img src="" alt="" class="avatar" id="currentAvatar">
+                    <div class="chat-details">
+                        <h3 id="currentChatName">Выберите чат</h3>
+                        <span class="status" id="currentStatus">Офлайн</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" id="callBtn" aria-label="Голосовой звонок"><i class="ri-phone-line"></i></button>
+                    <button class="icon-btn" id="videoCallBtn" aria-label="Видеозвонок"><i class="ri-video-line"></i></button>
+                    <button class="icon-btn" id="chatMenuBtn" aria-label="Меню чата"><i class="ri-more-2-fill"></i></button>
+                </div>
+            </header>
+
+            <div class="messages-container" id="messagesContainer" role="log" aria-live="polite" aria-relevant="additions">
+                <div class="welcome-message">
+                    <i class="ri-chat-smile-2-line"></i>
+                    <p>Выберите чат или начните новое общение</p>
+                </div>
+            </div>
+
+            <div class="voice-recording" id="voiceRecording">
+                <div class="recording-wave">
+                    <span></span><span></span><span></span>
+                </div>
+                <span id="recordingTime">00:00</span>
+                <button id="stopRecording" aria-label="Остановить запись"><i class="ri-stop-circle-line"></i></button>
+            </div>
+
+            <div class="input-area">
+                <button class="icon-btn" id="emojiBtn" aria-label="Эмодзи"><i class="ri-emotion-line"></i></button>
+                <button class="icon-btn" id="voiceBtn" aria-label="Голосовое сообщение"><i class="ri-mic-line"></i></button>
+                <button class="icon-btn" id="videoBtn" aria-label="Видеосообщение"><i class="ri-video-add-line"></i></button>
+                <input type="text" id="messageInput" placeholder="Сообщение..." aria-label="Введите сообщение">
+                <button class="icon-btn send-btn" id="sendBtn" aria-label="Отправить"><i class="ri-send-plane-fill"></i></button>
+            </div>
+        </main>
+    </div>
+
+    <!-- App Scripts (порядок важен!) -->
+    <script src="config.js"></script>
+    <script src="supabase-client.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
